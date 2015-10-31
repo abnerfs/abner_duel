@@ -1,0 +1,114 @@
+"Phrases"
+{
+	"Start Duel"
+	{
+		"en" 	"Starting 1v1 duel."
+		"pt" 	"Começando duelo 1v1."
+	}
+	"Marked"
+	{
+		"en" 	"(X)"
+		"pt" 	"(X)"
+	}
+	
+	"Yes"
+	{
+		"en" 	"Yes"
+		"pt" 	"Sim"
+	}
+	
+	"No"
+	{
+		"en" 	"No"
+		"pt" 	"Não"
+	}
+		
+	"Loaded"
+	{
+		"#format"		"{1:s}"
+		"en"			"{1} - Loaded."
+		"pt" 		"{1} - Carregado"
+	}
+
+	"Scope Off"
+	{
+		"en"			"The Scope is Off."
+		"pt" 		"A mira esta desativada."
+	}
+	"Scope On"
+	{
+		"en"			"The Scope is On."
+		"pt"			"A mira esta ativada."
+	}
+	"Sounds Enabled"
+	{
+		"en"		"Duel Sounds: Enabled"
+		"pt"		"Sons do duelo: Ativado"
+	}
+	"Sounds Disabled"
+	{
+		"en"		"Duel Sounds: Disabled"
+		"pt"		"Sons do duelo: Desativado"
+	}
+	
+	"Duel Canceled"
+	{
+		"en"			"Duel Canceled."
+		"pt"			"Duelo Cancelado."
+	}
+	"Duel Refused Blue"
+	{
+		"#format"		"{1:s}"
+		"en"			"Player {blue}{1}{default} refused the duel."
+		"pt"			"Jogador {blue}{1}{default} recusou o duelo."
+	}
+	"Duel Refused Red"
+	{
+		"#format"		"{1:s}"
+		"en"			"Player {red}{1}{default} refused the duel."
+		"pt"			"Jogador {red}{1}{default} recusou o duelo."
+	}
+	"Duel Accepted Blue"
+	{
+		"#format"		"{1:s}"
+		"en"			"Player {blue}{1}{default} accepted the noscope duel."
+		"pt"			"Jogador {blue}{1}{default} aceitou o duelo."
+	}
+	"Duel Accepted Red"
+	{
+		"#format"		"{1:s}"
+		"en"			"Player {red}{1}{default} accepted the noscope duel."
+		"pt"			"Jogador {red}{1}{default} aceitou o duelo."
+	}
+	"Always Accept"
+	{
+		"en"			"Always Accept"
+		"pt" 		"Sempre aceitar"
+	}
+	"Always Refuse"
+	{
+		"en"			"Always Refuse"
+		"pt"			"Sempre recusar"
+	}
+	"None"
+	{
+		"en"			"Decide in vote"
+		"pt" 		"Decidir na votação"
+	}
+	"command"
+	{
+		"en"			"Type !duel to set your duel preferences."
+		"pt" 		"Digite !duel para definir suas preferências do duelo."
+		
+	}
+	"Duel Ask"
+	{
+		"en"			"1x1 duel?"
+		"pt"			"Deseja duelar?"
+	}
+	"Fight Time"
+	{
+		"en"			"seconds remaining."
+		"pt" 		"segundos restantes."
+	}
+}
