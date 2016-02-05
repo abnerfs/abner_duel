@@ -12,21 +12,18 @@
 		"pt" 	"(X)"
 		"ru" 	"(X)"
 	}
-
 	"Yes"
 	{
 		"en" 	"Yes"
 		"pt" 	"Sim"
 		"ru" 	"Да"
 	}
-
 	"No"
 	{
 		"en" 	"No"
 		"pt" 	"Não"
 		"ru" 	"Нет"
 	}
-
 	"Loaded"
 	{
 		"#format"		"{1:s}"
@@ -34,7 +31,6 @@
 		"pt" 		"{1} - Carregado"
 		"ru" 		"{1} - Загружен"
 	}
-
 	"Scope Off"
 	{
 		"en"			"The Scope is Off."
@@ -117,14 +113,12 @@
 		"en"			"Type !duel to set your duel preferences."
 		"pt" 		"Digite !duel para definir suas preferências do duelo."
 		"ru" 		"Введите !duel что бы установить ваши дуэльные предпочтения."
-
 	}
 	"Duel Ask"
 	{
 		"en"			"1x1 duel?"
 		"pt"			"Deseja duelar?"
 		"ru"			"Дуэль 1x1?"
-
 	}
 	"Fight Time"
 	{
