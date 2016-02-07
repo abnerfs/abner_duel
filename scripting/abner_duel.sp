@@ -1,11 +1,3 @@
-/*
-	AbNeR Duel v3.2simple
-	-Plugin simplified to be stable, the focus of the plugin is AWP servers who want noscope duels in 1v1, the functionality to remove the 
-	weapons and give new weapons have been removed, which is not necessary in awp servers, to a duel 1v1 with different weapons use the 
-	Knife Fight.
-	-Fixed sound array size.
-*/
-
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
@@ -16,7 +8,7 @@
 
 #define MAX_EDICTS		2048
 #define MAX_SOUNDS		1024
-#define PLUGIN_VERSION "3.3simple"
+#define PLUGIN_VERSION "3.4"
 #define m_flNextSecondaryAttack FindSendPropOffs("CBaseCombatWeapon", "m_flNextSecondaryAttack")
 #pragma newdecls required // 2015 rules 
 
@@ -46,6 +38,7 @@ Handle g_IgnoreBots;
 Handle g_DuelBeacon;
 Handle g_DuelMsg;
 Handle g_WinnerCash;
+Handle g_hDuelArma;
 
 bool SemMiraEnabled = false;
 bool DueloSemMira = false;
@@ -67,6 +60,24 @@ int greenColor[4]	= {75, 255, 75, 255};
 int blueColor[4]	= {75, 75, 255, 255};
 int greyColor[4]	= {128, 128, 128, 255};
 
+char csgoWeapons[][] = {
+	"weapon_awp", "weapon_ak47", "weapon_aug", "weapon_bizon", "weapon_deagle", "weapon_decoy", "weapon_elite", "weapon_famas", "weapon_fiveseven", "weapon_flashbang",
+	"weapon_g3sg1", "weapon_galilar", "weapon_glock", "weapon_hegrenade", "weapon_hkp2000", "weapon_incgrenade", "weapon_knife", "weapon_m249", "weapon_m4a1",
+	"weapon_mac10", "weapon_mag7", "weapon_molotov", "weapon_mp7", "weapon_mp9", "weapon_negev", "weapon_nova", "weapon_p250", "weapon_p90", "weapon_sawedoff",
+	"weapon_scar20", "weapon_sg556", "weapon_smokegrenade", "weapon_ssg08", "weapon_taser", "weapon_tec9", "weapon_ump45", "weapon_xm1014"
+};
+
+bool IsCSGOWeapon(char[] weapon)
+{
+	for(int i = 0;i < sizeof(csgoWeapons);i++)
+	{
+		if(StrEqual(weapon, csgoWeapons[i]))
+			return true;
+	}
+	return false;
+}
+
+
 public Plugin myinfo =
 {
 	name = "[CSS/CS:GO] AbNeR Duel",
@@ -81,19 +92,20 @@ public void OnPluginStart()
 {  
 	/*																		CVARS																														*/
 	CreateConVar("abner_duel_version", PLUGIN_VERSION, "Plugin Version", FCVAR_NOTIFY|FCVAR_REPLICATED);
-	g_hDuel 												     = CreateConVar("duel_1x1", "1", "0 - Disabled, 1 - Vote, 2 - Force duel ");
-	g_hSound													 = CreateConVar("duel_music", "1", "Enable/Disable 1x1 Music");
-	g_hSoundPath 											 = CreateConVar("duel_music_path", "misc/noscope", "Duel Sounds Path");
-	g_hPlayType                                             = CreateConVar("duel_music_play_type", "1", "1 - Random, 2- Play in queue");
-	g_hStop                                                      = CreateConVar("duel_stop_map_music", "0", "Stop map musics ");
-	g_hTP                                                          = CreateConVar("duel_teleport", "1", "Teleport players in 1x1.");
+	g_hDuelArma 										= CreateConVar("duel_weapon", "weapon_awp", "Weapon used in 1x1");
+	g_hDuel 											= CreateConVar("duel_1x1", "1", "0 - Disabled, 1 - Vote, 2 - Force duel ");
+	g_hSound											= CreateConVar("duel_music", "1", "Enable/Disable 1x1 Music");
+	g_hSoundPath 										= CreateConVar("duel_music_path", "misc/noscope", "Duel Sounds Path");
+	g_hPlayType                                         = CreateConVar("duel_music_play_type", "1", "1 - Random, 2- Play in queue");
+	g_hStop                                             = CreateConVar("duel_stop_map_music", "0", "Stop map musics ");
+	g_hTP                                               = CreateConVar("duel_teleport", "1", "Teleport players in 1x1.");
 	g_hRefuseSound                                      = CreateConVar("duel_refuse_sound", "misc/th_chicken.mp3", "Refuse sound path.");
-	g_hFightTime                                            = CreateConVar("duel_fight_time", "", "Max duel time in seconds.");
-	g_hIammo                                                  = CreateConVar("duel_iammo", "1", "Infinity Ammo in Duel");
-	g_IgnoreBots                                             = CreateConVar("duel_ignore_bots", "1", "Dont't start the duel with alive bots");
-	g_DuelBeacon                                           = CreateConVar("duel_beacon", "1", "Enable/Disable player beacon in Duel");
-	g_DuelMsg                                                 = CreateConVar("duel_join_msg", "1", "Enable/Disable join message.");
-	g_WinnerCash                                           = CreateConVar("duel_winner_extracash", "0", "Give extra cash to the winner!");
+	g_hFightTime                                        = CreateConVar("duel_fight_time", "", "Max duel time in seconds.");
+	g_hIammo                                            = CreateConVar("duel_iammo", "1", "Infinity Ammo in Duel");
+	g_IgnoreBots                                        = CreateConVar("duel_ignore_bots", "1", "Dont't start the duel with alive bots");
+	g_DuelBeacon                                        = CreateConVar("duel_beacon", "1", "Enable/Disable player beacon in Duel");
+	g_DuelMsg                                           = CreateConVar("duel_join_msg", "1", "Enable/Disable join message.");
+	g_WinnerCash                                        = CreateConVar("duel_winner_extracash", "0", "Give extra cash to the winner!");
 	
 	/*                                                                      ClientPrefs	    																				*/
 	g_DuelCookie 						= RegClientCookie("AbNeR Duel Settings", "", CookieAccess_Private);
@@ -731,6 +743,7 @@ public void StartDuel()
 		CreateBeacon(ctid);
 		CreateBeacon(trid);
 	}
+	DeleteAllWeapons();
 	CreateTimer(3.0, SetDuelConditions);
 	CPrintToChatAll("{green}[AbNeR Duel] {default}%t", "Start Duel");
 }
@@ -740,10 +753,18 @@ public Action SetDuelConditions(Handle timer)
 {
 	if(DueloSemMira)
 	{
+		char DuelWeapon[255];
+		GetConVarString(g_hDuelArma, DuelWeapon, sizeof(DuelWeapon));
+		if(!StrEqual(DuelWeapon, "") && !StrEqual(DuelWeapon, "weapon_knife"))
+		{
+			GiveItem(ctid, DuelWeapon);
+			GiveItem(trid, DuelWeapon);
+		}
+		
 		SetEntProp(ctid, Prop_Send, "m_iHealth", 100, 1);
 		SetEntData(ctid, FindSendPropOffs("CBaseEntity", "m_CollisionGroup"), 2, 4, true);
 		SetEntProp(ctid, Prop_Data, "m_takedamage", 2, 1);
-		
+			
 		SetEntProp(trid, Prop_Send, "m_iHealth", 100, 1);
 		SetEntData(trid, FindSendPropOffs("CBaseEntity", "m_CollisionGroup"), 2, 4, true);
 		SetEntProp(trid, Prop_Data, "m_takedamage", 2, 1);
@@ -757,6 +778,37 @@ public Action SetDuelConditions(Handle timer)
 				g_hTimeDuel = CreateTimer(1.0, cmsg, _, TIMER_REPEAT);  
 		}
 	}
+}
+
+public void DeleteAllWeapons()
+{
+	for(int  i=1;i<GetMaxEntities();i++)
+	{
+		if(IsValidEdict(i))
+		{
+			char strName[64];
+			GetEdictClassname(i, strName, sizeof(strName));
+			if(StrContains(strName, "weapon_", false) == -1 && StrContains(strName, "item_", false) == -1)
+				continue;
+			RemoveEdict(i);
+		}
+	}
+}
+
+
+int GiveItem(int client, char[] weapon, int index=0)
+{
+	if(CSGO && !IsCSGOWeapon(weapon))
+		return -1;
+	
+	int entity = GivePlayerItem(client, weapon);
+	if(CSGO && index > 0)
+	{
+		SetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex", index);
+		CS_DropWeapon(client, entity, false); 
+		EquipPlayerWeapon(client, entity);
+	}
+	return entity;
 }
 
 public Action cmsg(Handle timer, any client)
