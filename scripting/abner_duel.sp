@@ -8,7 +8,7 @@
 
 #define MAX_EDICTS		2048
 #define MAX_SOUNDS		1024
-#define PLUGIN_VERSION "3.4fix"
+#define PLUGIN_VERSION "3.4fix2"
 #define m_flNextSecondaryAttack FindSendPropInfo("CBaseCombatWeapon", "m_flNextSecondaryAttack")
 #pragma newdecls required // 2015 rules 
 
@@ -177,7 +177,7 @@ public Action PreThink(int client)
 		GetEdictClassname(weapon, item, sizeof(item)); 
 		if(DueloSemMira && !StrEqual(item, "weapon_knife") && GetConVarInt(g_hIammo) == 1) //Infinity Ammo
 		{
-			int clip1Offset = FindSendPropOffs("CBaseCombatWeapon", "m_iClip1");
+			int clip1Offset = FindSendPropInfo("CBaseCombatWeapon", "m_iClip1");
 			SetEntData(weapon, clip1Offset, 200, 4, true);
 		}
 		if(SemMiraEnabled && isNoScopeWeapon(item))
@@ -762,11 +762,11 @@ public Action SetDuelConditions(Handle timer)
 		}
 		
 		SetEntProp(ctid, Prop_Send, "m_iHealth", 100, 1);
-		SetEntData(ctid, FindSendPropOffs("CBaseEntity", "m_CollisionGroup"), 2, 4, true);
+		SetEntData(ctid, FindSendPropInfo("CBaseEntity", "m_CollisionGroup"), 2, 4, true);
 		SetEntProp(ctid, Prop_Data, "m_takedamage", 2, 1);
 			
 		SetEntProp(trid, Prop_Send, "m_iHealth", 100, 1);
-		SetEntData(trid, FindSendPropOffs("CBaseEntity", "m_CollisionGroup"), 2, 4, true);
+		SetEntData(trid, FindSendPropInfo("CBaseEntity", "m_CollisionGroup"), 2, 4, true);
 		SetEntProp(trid, Prop_Data, "m_takedamage", 2, 1);
 		
 		char fighttime[32];
