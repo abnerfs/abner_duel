@@ -8,8 +8,8 @@
 
 #define MAX_EDICTS		2048
 #define MAX_SOUNDS		1024
-#define PLUGIN_VERSION "3.4"
-#define m_flNextSecondaryAttack FindSendPropOffs("CBaseCombatWeapon", "m_flNextSecondaryAttack")
+#define PLUGIN_VERSION "3.4fix"
+#define m_flNextSecondaryAttack FindSendPropInfo("CBaseCombatWeapon", "m_flNextSecondaryAttack")
 #pragma newdecls required // 2015 rules 
 
 int g_iSoundEnts[MAX_EDICTS];
@@ -108,8 +108,8 @@ public void OnPluginStart()
 	g_WinnerCash                                        = CreateConVar("duel_winner_extracash", "0", "Give extra cash to the winner!");
 	
 	/*                                                                      ClientPrefs	    																				*/
-	g_DuelCookie 						= RegClientCookie("AbNeR Duel Settings", "", CookieAccess_Private);
-	g_SoundsCookie 					= RegClientCookie("abner_duel_sounds", "", CookieAccess_Private);
+	g_DuelCookie 									 	= RegClientCookie("AbNeR Duel Settings", "", CookieAccess_Private);
+	g_SoundsCookie 										= RegClientCookie("abner_duel_sounds", "", CookieAccess_Private);
 	
 	SetCookieMenuItem(DuelCookieHandler, 0, "AbNeR Duel");
 	RegConsoleCmd("abnerduel", DuelMenu);
