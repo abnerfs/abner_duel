@@ -8,7 +8,7 @@
 
 #define MAX_EDICTS		2048
 #define MAX_SOUNDS		1024
-#define PLUGIN_VERSION "3.4fix2"
+#define PLUGIN_VERSION "3.4fix3"
 #define m_flNextSecondaryAttack FindSendPropInfo("CBaseCombatWeapon", "m_flNextSecondaryAttack")
 #pragma newdecls required // 2015 rules 
 
@@ -965,7 +965,7 @@ public Action Timer_Beacon(Handle timer, any value)
 	int client = value & 0x7f;
 	int serial = value >> 7;
 
-	if (!IsClientInGame(client)
+	if (!IsValidClient(client)
 		|| !IsPlayerAlive(client)
 		|| g_BeaconSerial[client] != serial)
 	{
