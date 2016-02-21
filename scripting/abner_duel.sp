@@ -8,7 +8,7 @@
 
 #define MAX_EDICTS		2048
 #define MAX_SOUNDS		1024
-#define PLUGIN_VERSION "3.4fix3"
+#define PLUGIN_VERSION "3.4fix4"
 #define m_flNextSecondaryAttack FindSendPropInfo("CBaseCombatWeapon", "m_flNextSecondaryAttack")
 #pragma newdecls required // 2015 rules 
 
@@ -751,7 +751,7 @@ public void StartDuel()
 
 public Action SetDuelConditions(Handle timer)
 {
-	if(DueloSemMira)
+	if(DueloSemMira && IsValidClient(ctid) && IsValidClient(trid))
 	{
 		char DuelWeapon[255];
 		GetConVarString(g_hDuelArma, DuelWeapon, sizeof(DuelWeapon));
@@ -946,7 +946,7 @@ void KillBeacon(int client)
 {
 	g_BeaconSerial[client] = 0;
 
-	if (IsClientInGame(client))
+	if (IsValidClient(client))
 	{
 		SetEntityRenderColor(client, 255, 255, 255, 255);
 	}
