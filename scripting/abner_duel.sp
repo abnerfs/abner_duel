@@ -4,16 +4,14 @@
 #include <colors>
 #include <clientprefs>
 #include <cstrike>
+#include <abnersound>
 #pragma semicolon 1
 
 #define MAX_EDICTS		2048
 #define MAX_SOUNDS		1024
-#define PLUGIN_VERSION "3.4fix4"
+#define PLUGIN_VERSION "4.0.0"
 #define m_flNextSecondaryAttack FindSendPropInfo("CBaseCombatWeapon", "m_flNextSecondaryAttack")
-#pragma newdecls required // 2015 rules 
-
-int g_iSoundEnts[MAX_EDICTS];
-int g_iNumSounds;
+#pragma newdecls required 
 
 int g_S = 0, g_N = 0;
 int  trid = 0;
@@ -24,7 +22,7 @@ int  seconds = 0;
 Handle g_VoteMenu = INVALID_HANDLE;
 Handle g_hDuel;
 Handle g_hSound;
-Handle g_hSoundPath;
+ConVar g_hSoundPath;
 Handle g_DuelCookie;
 Handle g_SoundsCookie;
 Handle g_hPlayType;
@@ -34,15 +32,14 @@ Handle g_hRefuseSound;
 Handle g_hFightTime;
 Handle g_hIammo;
 Handle g_hTimeDuel = INVALID_HANDLE;
-Handle g_IgnoreBots;
 Handle g_DuelBeacon;
 Handle g_DuelMsg;
 Handle g_WinnerCash;
 Handle g_hDuelArma;
+Handle g_Health;
 
 bool SemMiraEnabled = false;
 bool DueloSemMira = false;
-bool SoundsSucess;
 bool CSGO;
 
 ArrayList sounds;
@@ -81,10 +78,10 @@ bool IsCSGOWeapon(char[] weapon)
 public Plugin myinfo =
 {
 	name = "[CSS/CS:GO] AbNeR Duel",
-	author = "AbNeR_CSS",
+	author = "abnerfs",
 	description = "Duel and NoScope in 1v1",
 	version = PLUGIN_VERSION,
-	url = "www.tecnohardclan.com/forum"
+	url = "https://github.com/abnerfs/abner_duel"
 }
 
 
@@ -92,25 +89,31 @@ public void OnPluginStart()
 {  
 	/*																		CVARS																														*/
 	CreateConVar("abner_duel_version", PLUGIN_VERSION, "Plugin Version", FCVAR_NOTIFY|FCVAR_REPLICATED);
-	g_hDuelArma 										= CreateConVar("duel_weapon", "weapon_awp", "Weapon used in 1x1");
+	g_hDuelArma 										= CreateConVar("duel_weapon", "weapon_awp;weapon_knife", "Weapons used in 1v1 duel");
 	g_hDuel 											= CreateConVar("duel_1x1", "1", "0 - Disabled, 1 - Vote, 2 - Force duel ");
 	g_hSound											= CreateConVar("duel_music", "1", "Enable/Disable 1x1 Music");
+
 	g_hSoundPath 										= CreateConVar("duel_music_path", "misc/noscope", "Duel Sounds Path");
 	g_hPlayType                                         = CreateConVar("duel_music_play_type", "1", "1 - Random, 2- Play in queue");
 	g_hStop                                             = CreateConVar("duel_stop_map_music", "0", "Stop map musics ");
-	g_hTP                                               = CreateConVar("duel_teleport", "1", "Teleport players in 1x1.");
 	g_hRefuseSound                                      = CreateConVar("duel_refuse_sound", "misc/th_chicken.mp3", "Refuse sound path.");
-	g_hFightTime                                        = CreateConVar("duel_fight_time", "", "Max duel time in seconds.");
+
+	g_hTP                                               = CreateConVar("duel_teleport", "1", "Teleport players in 1x1.");
+	g_hFightTime                                        = CreateConVar("duel_fight_time", "30", "Max duel time in second, 0 to disable");
 	g_hIammo                                            = CreateConVar("duel_iammo", "1", "Infinity Ammo in Duel");
-	g_IgnoreBots                                        = CreateConVar("duel_ignore_bots", "1", "Dont't start the duel with alive bots");
+
+
 	g_DuelBeacon                                        = CreateConVar("duel_beacon", "1", "Enable/Disable player beacon in Duel");
+
 	g_DuelMsg                                           = CreateConVar("duel_join_msg", "1", "Enable/Disable join message.");
-	g_WinnerCash                                        = CreateConVar("duel_winner_extracash", "0", "Give extra cash to the winner!");
+
+	g_WinnerCash                                        = CreateConVar("duel_winner_extracash", "2000", "Give extra cash to the winner!");
+	g_Health											= CreateConVar("duel_health", "100", "Health that players will have in duel, 0 - Doesn't change current health");
 	
 	/*                                                                      ClientPrefs	    																				*/
 	g_DuelCookie 									 	= RegClientCookie("AbNeR Duel Settings", "", CookieAccess_Private);
 	g_SoundsCookie 										= RegClientCookie("abner_duel_sounds", "", CookieAccess_Private);
-	
+
 	SetCookieMenuItem(DuelCookieHandler, 0, "AbNeR Duel");
 	RegConsoleCmd("abnerduel", DuelMenu);
 	RegConsoleCmd("duel", DuelMenu);
@@ -123,17 +126,20 @@ public void OnPluginStart()
 	RegAdminCmd("sm_noscope", CommandSemMira, ADMFLAG_SLAY);
 	RegAdminCmd("duel_refresh", CommandLoad, ADMFLAG_SLAY);
 
-	HookConVarChange(g_hSoundPath, PathChange);
 	
 	HookEvent("player_death", PlayerDeath);
 	HookEvent("player_spawn", PlayerSpawn);
 	HookEvent("round_start", Event_RoundStart);
 	HookEvent("round_end", AtivarMira);
 
-	char theFolder[40];
-	GetGameFolderName(theFolder, sizeof(theFolder));
-	CSGO = StrEqual(theFolder, "csgo");
-	sounds = new ArrayList(524);
+	CSGO = GetEngineVersion() == Engine_CSGO; 
+
+	sounds = new ArrayList(512);
+
+	for(int i = 1;i <= MaxClients; i++) {
+		if(IsValidClient(i))
+			OnClientPutInServer(i);
+	}
 }
 
 
@@ -274,6 +280,10 @@ public int DuelMenuHandler(Handle menu, MenuAction action, int param1, int param
 		}
 		DuelMenu(param1, 0);
 	}
+	else if(action == MenuAction_End)
+	{
+		delete menu;
+	}
 	return 0;
 }
 
@@ -288,6 +298,7 @@ public void OnMapStart()
 		char download[PLATFORM_MAX_PATH];
 		Format(download, sizeof(download), "sound/%s", soundpath);
 		AddFileToDownloadsTable(download);
+		PrecacheSoundAny(soundpath);
 	}
 	
 	//Beacon Stuff
@@ -300,7 +311,7 @@ public void OnMapStart()
 	
 	if (GameConfGetKeyValue(gameConfig, "SoundBlip", g_BlipSound, sizeof(g_BlipSound)) && g_BlipSound[0])
 	{
-		PrecacheSound(g_BlipSound, true);
+		PrecacheSoundAny(g_BlipSound, true);
 	}
 	
 	char buffer[PLATFORM_MAX_PATH];
@@ -317,65 +328,15 @@ public void OnMapStart()
 }
 
 
-public void PathChange(Handle cvar, const char[] oldVa, const char[] newVal)
-{       
-	RefreshSounds(0);
-}
-
 void RefreshSounds(int client)
 {
-	int size = LoadSounds();
-	SoundsSucess = size > 0;
-	if(SoundsSucess)
+	int size = LoadSounds(sounds, g_hSoundPath);
+	if(size > 0)
 		CReplyToCommand(client, "{green}[AbNeR Duel] {default}Loaded %d sounds.", size);
 	else
 		CReplyToCommand(client, "{green}[AbNeR Duel] {default}INVALID SOUND PATH");
 }
 
-int LoadSounds()
-{
-	sounds.Clear();
-	char name[128];
-	char soundname[524];
-	char soundpath[PLATFORM_MAX_PATH];
-	char soundpath2[PLATFORM_MAX_PATH];
-	GetConVarString(g_hSoundPath, soundpath, sizeof(soundpath));
-	Format(soundpath2, sizeof(soundpath2), "sound/%s/", soundpath);
-	Handle pluginsdir = OpenDirectory(soundpath2);
-	if(pluginsdir == INVALID_HANDLE)
-		return -1;
-
-	while(ReadDirEntry(pluginsdir,name,sizeof(name)))
-	{
-		int namelen = strlen(name) - 4;
-		if(StrContains(name,".mp3",false) == namelen)
-		{
-			Format(soundname, sizeof(soundname), "sound/%s/%s", soundpath, name);
-			AddFileToDownloadsTable(soundname);
-			Format(soundname, sizeof(soundname), "%s/%s", soundpath, name);
-			sounds.PushString(soundname);
-		}
-	}
-	return sounds.Length;
-}
-
-public void PlaySound()
-{
-	int soundToPlay;
-	if(GetConVarInt(g_hPlayType) == 1)
-	{
-		soundToPlay = GetRandomInt(0, sounds.Length-1);
-	}
-	else
-	{
-		soundToPlay = 0;
-	}
-	char szSound[128];
-	sounds.GetString(soundToPlay, szSound, sizeof(szSound));
-	sounds.Erase(soundToPlay);
-	PlaySoundAll(szSound);
-	if(sounds.Length == 0) RefreshSounds(0);
-}
 
 public void PlaySoundAll(char[] szSound)
 {
@@ -386,15 +347,7 @@ public void PlaySoundAll(char[] szSound)
 	{
 		if(IsValidClient(i) && GetIntCookie(i, g_SoundsCookie) == 0)
 		{
-			if(CSGO)
-			{
-				ClientCommand(i, "playgamesound Music.StopAllMusic");
-				ClientCommand(i, "play *%s", szSound);
-			}
-			else
-			{
-				ClientCommand(i, "play %s", szSound);
-			}
+			PlaySoundClient(i, szSound, 1.0);
 		}
 	}
 }
@@ -407,11 +360,8 @@ public void Event_RoundStart(Handle event, const char[] name, bool dontBroadcast
 	SemMiraEnabled = false;
 	DueloSemMira = false;
 	
-	if(g_VoteMenu != INVALID_HANDLE)
-	{
-		CloseHandle(g_VoteMenu);
-		g_VoteMenu = INVALID_HANDLE;
-	}
+	g_VoteMenu = INVALID_HANDLE;
+
 	if(g_hTimeDuel != INVALID_HANDLE)
 	{
 		KillTimer(g_hTimeDuel);
@@ -420,46 +370,10 @@ public void Event_RoundStart(Handle event, const char[] name, bool dontBroadcast
 	
 	if(GetConVarInt(g_hStop) == 1)
 	{
-		// Ents are recreated every round.
-		g_iNumSounds = 0;
-
-		// Find all ambient sounds played by the map.
-		char sSound[PLATFORM_MAX_PATH];
-		int  entity = INVALID_ENT_REFERENCE;
-
-		while ((entity = FindEntityByClassname(entity, "ambient_generic")) != INVALID_ENT_REFERENCE)
-		{
-			GetEntPropString(entity, Prop_Data, "m_iszSound", sSound, sizeof(sSound));
-			
-			int  len = strlen(sSound);
-			if (len > 4 && (StrEqual(sSound[len-3], "mp3") || StrEqual(sSound[len-3], "wav")))
-			{
-				g_iSoundEnts[g_iNumSounds++] = EntIndexToEntRef(entity);
-			}
-		}
+		MapSounds();
 	}
 }
 
-stock void Client_StopSound(int client, int entity, int channel, const char[] name)
-{
-	EmitSoundToClient(client, name, entity, channel, SNDLEVEL_NONE, SND_STOP, 0.0, SNDPITCH_NORMAL, _, _, _, true);
-}
-
-public void StopMapMusic()
-{
-	char sSound[PLATFORM_MAX_PATH];
-	int  entity = INVALID_ENT_REFERENCE;
-	for(int  i=1;i<=MaxClients;i++){
-		if(!IsClientInGame(i)){ continue; }
-		for (int  u=0; u<g_iNumSounds; u++){
-			entity = EntRefToEntIndex(g_iSoundEnts[u]);
-			if (entity != INVALID_ENT_REFERENCE){
-				GetEntPropString(entity, Prop_Data, "m_iszSound", sSound, sizeof(sSound));
-				Client_StopSound(i, entity, SNDCHAN_STATIC, sSound);
-			}
-		}
-	}
-}
 
 public int VoteMenuHandler(Handle menu, MenuAction action, int param1, int param2)
 {
@@ -476,6 +390,10 @@ public int VoteMenuHandler(Handle menu, MenuAction action, int param1, int param
 					nao(param1);
 			}
 		}
+	}
+	else if(action == MenuAction_End)
+	{
+		delete menu;
 	}
 	return 0;
 }
@@ -550,14 +468,18 @@ public void nao(int client)
 	char nome[MAX_TARGET_LENGTH];
 	GetClientName(client, nome, sizeof(nome));
 	g_N++;
-	if(GetClientTeam(client) == 2)
+
+	int team = GetClientTeam(client);
+	switch(team)
 	{
-		CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Duel Refused Red", nome);
+		case 2: {
+			CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Duel Refused Red", nome);
+		}
+		case 3: {
+			CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Duel Refused Blue", nome);
+		}
 	}
-	else if(GetClientTeam(client) == 3)
-	{
-		CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Duel Refused Blue", nome);
-	}
+	
 	char soundpath[PLATFORM_MAX_PATH];
 	GetConVarString(g_hRefuseSound, soundpath, sizeof(soundpath));
 	PlaySoundAll(soundpath);
@@ -573,11 +495,7 @@ public void check_votes()
 	else if (g_N >= 1)
 	{
 		CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Duel Canceled");
-		if(g_VoteMenu != INVALID_HANDLE)
-		{
-			CloseHandle(g_VoteMenu);
-			g_VoteMenu = INVALID_HANDLE;
-		}
+		g_VoteMenu = INVALID_HANDLE;
 	}
 }
 
@@ -685,11 +603,8 @@ public Action AtivarMira(Handle event, const char[] name, bool dontBroadcast)
 	ctid = 0, trid = 0;
 	SemMiraEnabled = false;
 	DueloSemMira = false;
-	if(g_VoteMenu != INVALID_HANDLE)
-	{
-		CloseHandle(g_VoteMenu);
-		g_VoteMenu = INVALID_HANDLE;
-	}
+	g_VoteMenu = INVALID_HANDLE;
+
 	if(g_hTimeDuel != INVALID_HANDLE)
 	{
 		KillTimer(g_hTimeDuel);
@@ -701,20 +616,22 @@ public void StartDuel()
 {
 	SemMiraEnabled = true;
 	DueloSemMira = true;
+
 	if(GetConVarInt(g_hSound) == 1)
 	{	
-		if(GetConVarInt(g_hStop) == 1) StopMapMusic();
-		if(SoundsSucess)
-			PlaySound();
-		else
-			PrintToServer("[AbNeR Duel] Sound Error, Invalid Sound Path.");
+		if(GetConVarInt(g_hStop) == 1) 
+			StopMapMusic();
+		
+		char szSound[128];
+		bool random = GetConVarInt(g_hPlayType) == 1;
+		bool success = GetSound(sounds, g_hSoundPath, random, szSound, sizeof(szSound));
+		
+		if(success) {
+			PlaySoundAll(szSound);
+		}
 	}
 	
-	if(g_VoteMenu != INVALID_HANDLE)
-	{
-		CloseHandle(g_VoteMenu);
-		g_VoteMenu = INVALID_HANDLE;
-	}
+	g_VoteMenu = INVALID_HANDLE;
 	
 	for (int  i = 1; i <= MaxClients; i++)
 	{
@@ -724,11 +641,14 @@ public void StartDuel()
 			{
 				trid = i;
 				SetEntProp(i, Prop_Data, "m_takedamage", 0, 1);
+				SetEntData(i, FindSendPropInfo("CBaseEntity", "m_CollisionGroup"), 2, 4, true);
+
 			}
 			else if(GetClientTeam(i) == 3)
 			{
 				ctid = i;
 				SetEntProp(i, Prop_Data, "m_takedamage", 0, 1);
+				SetEntData(i, FindSendPropInfo("CBaseEntity", "m_CollisionGroup"), 2, 4, true);
 			}
 		}
 	}
@@ -749,25 +669,38 @@ public void StartDuel()
 }
 
 
+void SetDuelPlayer(int client)
+{
+	if(!IsValidClient(client) || !IsPlayerAlive(client))
+		return;
+
+	int Health = GetConVarInt(g_Health);
+	if(Health > 0)
+		SetEntProp(client, Prop_Send, "m_iHealth", Health, 1);
+
+	SetEntProp(client, Prop_Data, "m_takedamage", 2, 1);
+	
+}
+
 public Action SetDuelConditions(Handle timer)
 {
 	if(DueloSemMira && IsValidClient(ctid) && IsValidClient(trid))
 	{
 		char DuelWeapon[255];
 		GetConVarString(g_hDuelArma, DuelWeapon, sizeof(DuelWeapon));
-		if(!StrEqual(DuelWeapon, "") && !StrEqual(DuelWeapon, "weapon_knife"))
+
+		char arrWeapons[10][255];
+		int count = ExplodeString(DuelWeapon, ";", arrWeapons, sizeof(arrWeapons), sizeof(arrWeapons[]));
+
+		for(int i = 0;i < count;i++)
 		{
-			GiveItem(ctid, DuelWeapon);
-			GiveItem(trid, DuelWeapon);
+			GiveItem(ctid, arrWeapons[i]);
+			GiveItem(trid, arrWeapons[i]);
 		}
 		
-		SetEntProp(ctid, Prop_Send, "m_iHealth", 100, 1);
-		SetEntData(ctid, FindSendPropInfo("CBaseEntity", "m_CollisionGroup"), 2, 4, true);
-		SetEntProp(ctid, Prop_Data, "m_takedamage", 2, 1);
-			
-		SetEntProp(trid, Prop_Send, "m_iHealth", 100, 1);
-		SetEntData(trid, FindSendPropInfo("CBaseEntity", "m_CollisionGroup"), 2, 4, true);
-		SetEntProp(trid, Prop_Data, "m_takedamage", 2, 1);
+		SetDuelPlayer(trid);
+		SetDuelPlayer(ctid);
+		
 		
 		char fighttime[32];
 		GetConVarString(g_hFightTime, fighttime, sizeof(fighttime));
@@ -839,7 +772,7 @@ public Action cmsg(Handle timer, any client)
 
 public Action TeleportPlayers(Handle timer, any client)
 {
-	if(DueloSemMira)
+	if(DueloSemMira && IsValidClient(ctid) && IsPlayerAlive(ctid) && IsValidClient(trid) && IsPlayerAlive(trid))
 	{
 		float ctvec[3];
 		float tvec[3];
@@ -857,7 +790,7 @@ public Action TeleportPlayers(Handle timer, any client)
 
 public Action DoTp(Handle timer)
 {
-	if(DueloSemMira && IsValidClient(trid))
+	if(DueloSemMira && IsValidClient(trid) && IsPlayerAlive(trid))
 	{
 		TeleportEntity(trid, teleloc, NULL_VECTOR, NULL_VECTOR);
 	}
@@ -866,66 +799,28 @@ public Action DoTp(Handle timer)
 
 public int trs_vivos()
 {
-	if(GetConVarInt(g_IgnoreBots) == 0)
+	int g_TRs = 0;
+	for (int  i = 1; i <= MaxClients; i++)
 	{
-		int g_TRs = 0;
-		for (int  i = 1; i <= MaxClients; i++)
+		if(IsValidClient(i) && IsPlayerAlive(i) && GetClientTeam(i) == 2)
 		{
-			if(IsValidClient(i) && IsPlayerAlive(i) && GetClientTeam(i) == 2)
-			{
-				g_TRs++;
-			}
+			g_TRs++;
 		}
-		return g_TRs;
 	}
-	else
-	{
-		int g_TRs, g_Bots;
-		g_TRs = 0;
-		g_Bots = 0;
-		for (int  i = 1; i <= MaxClients; i++)
-		{
-			if(IsValidClient(i) && IsPlayerAlive(i) && GetClientTeam(i) == 2)
-			{
-				IsFakeClient(i) ? g_Bots++ : g_TRs++;
-			}
-		}
-		if(g_TRs == 1 && g_Bots > 0)
-			return g_TRs + g_Bots;
-		return g_TRs;
-	}
+	return g_TRs;
 }
 
 public int cts_vivos()
 {
-	if(GetConVarInt(g_IgnoreBots) == 0)
+	int g_CTs = 0;
+	for (int  i = 1; i <= MaxClients; i++)
 	{
-		int g_CTs = 0;
-		for (int  i = 1; i <= MaxClients; i++)
+		if(IsValidClient(i) && IsPlayerAlive(i) && GetClientTeam(i) == 3)
 		{
-			if(IsValidClient(i) && IsPlayerAlive(i) && GetClientTeam(i) == 3)
-			{
-				g_CTs++;
-			}
+			g_CTs++;
 		}
-		return g_CTs;
 	}
-	else
-	{
-		int g_CTs, g_Bots;
-		g_CTs = 0;
-		g_Bots = 0;
-		for (int  i = 1; i <= MaxClients; i++)
-		{
-			if (IsValidClient(i) && IsPlayerAlive(i) && GetClientTeam(i) == 3)
-			{
-				IsFakeClient(i) ? g_Bots++ : g_CTs++;
-			}
-		}
-		if(g_CTs == 1 && g_Bots > 0)
-			return g_CTs + g_Bots;
-		return g_CTs;
-	}
+	return g_CTs;
 }
 
 int GetIntCookie(int client, Handle handle)
