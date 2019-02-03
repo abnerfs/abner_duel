@@ -9,7 +9,7 @@
 
 #define MAX_EDICTS		2048
 #define MAX_SOUNDS		1024
-#define PLUGIN_VERSION "4.0.0"
+#define PLUGIN_VERSION "4.0.1"
 #define m_flNextSecondaryAttack FindSendPropInfo("CBaseCombatWeapon", "m_flNextSecondaryAttack")
 #pragma newdecls required 
 
@@ -38,8 +38,8 @@ Handle g_WinnerCash;
 Handle g_hDuelArma;
 Handle g_Health;
 
-bool SemMiraEnabled = false;
-bool DueloSemMira = false;
+bool NoScopeEnabled = false;
+bool DuelStarted = false;
 bool CSGO;
 
 ArrayList sounds;
@@ -130,7 +130,7 @@ public void OnPluginStart()
 	HookEvent("player_death", PlayerDeath);
 	HookEvent("player_spawn", PlayerSpawn);
 	HookEvent("round_start", Event_RoundStart);
-	HookEvent("round_end", AtivarMira);
+	HookEvent("round_end", Event_RoundEnd);
 
 	CSGO = GetEngineVersion() == Engine_CSGO; 
 
@@ -141,6 +141,8 @@ public void OnPluginStart()
 			OnClientPutInServer(i);
 	}
 }
+
+
 
 
 bool isNoScopeWeapon(char[] weapon)
@@ -181,12 +183,12 @@ public Action PreThink(int client)
 
 		char item[64];
 		GetEdictClassname(weapon, item, sizeof(item)); 
-		if(DueloSemMira && !StrEqual(item, "weapon_knife") && GetConVarInt(g_hIammo) == 1) //Infinity Ammo
+		if(DuelStarted && !StrEqual(item, "weapon_knife") && GetConVarInt(g_hIammo) == 1) //Infinity Ammo
 		{
 			int clip1Offset = FindSendPropInfo("CBaseCombatWeapon", "m_iClip1");
 			SetEntData(weapon, clip1Offset, 200, 4, true);
 		}
-		if(SemMiraEnabled && isNoScopeWeapon(item))
+		if(NoScopeEnabled && isNoScopeWeapon(item))
 		{
 			SetEntDataFloat(weapon, m_flNextSecondaryAttack, GetGameTime() + 9999.9); //Disable Scope
 		}
@@ -287,6 +289,12 @@ public int DuelMenuHandler(Handle menu, MenuAction action, int param1, int param
 	return 0;
 }
 
+public void OnClientDisconnect(int client)
+{
+	if(DuelStarted && (client == trid || client == ctid))
+		FinishDuel();
+}
+
 
 public void OnMapStart()
 {
@@ -357,8 +365,8 @@ public void Event_RoundStart(Handle event, const char[] name, bool dontBroadcast
 {
 	KillAllBeacons();
 	ctid = 0, trid = 0;
-	SemMiraEnabled = false;
-	DueloSemMira = false;
+	NoScopeEnabled = false;
+	DuelStarted = false;
 	
 	g_VoteMenu = INVALID_HANDLE;
 
@@ -507,9 +515,9 @@ public Action CommandLoad(int client, int args)
 
 public Action CommandSemMira(int client, int args)
 {   
-	if(SemMiraEnabled)
+	if(NoScopeEnabled)
 	{
-		SemMiraEnabled = false;
+		NoScopeEnabled = false;
 		CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Scope On");
 		for (int  i = 1; i <= MaxClients; i++)
 		{
@@ -535,7 +543,7 @@ public Action CommandSemMira(int client, int args)
 	}
 	else
 	{
-		SemMiraEnabled = true;
+		NoScopeEnabled = true;
 		CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Scope Off");
 		return Plugin_Handled;
 	}
@@ -549,12 +557,15 @@ public Action PlayerSpawn(Handle event, const char[] name, bool dontBroadcast)
 
 public Action CheckDuel(Handle time, any client)
 {
-	if(DueloSemMira && IsValidClient(client))
+	if(DuelStarted && IsValidClient(client))
 		ForcePlayerSuicide(client);
 }
 
 public Action PlayerDeath(Handle event, const char[] name, bool dontBroadcast) 
 { 
+	if(DuelStarted)
+		return Plugin_Continue;
+
 	if(CSGO && GameRules_GetProp("m_bWarmupPeriod") == 1)
 		return Plugin_Continue;
 	
@@ -573,36 +584,44 @@ public Action PlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 }
 
 
-public Action AtivarMira(Handle event, const char[] name, bool dontBroadcast) 
-{ 
-	if(DueloSemMira)
-	{
-		KillAllBeacons();
-		int extra = GetConVarInt(g_WinnerCash);
-		if(IsValidClient(ctid) && IsValidClient(trid))
+
+
+void FinishDuel() {
+	KillAllBeacons();
+
+	int extra = GetConVarInt(g_WinnerCash);
+	bool trAlive = IsValidClient(trid) && IsPlayerAlive(trid);
+	bool ctAlive = IsValidClient(ctid) && IsPlayerAlive(ctid);
+
+	int winner = 0;
+
+	if(trAlive && !ctAlive) {
+		winner = trid;
+	}
+	else if(ctAlive && !trAlive) {
+		winner = ctid;
+	}
+
+	if(winner > 0) {
+		if(extra > 0)
 		{
-			if(IsPlayerAlive(ctid) && !IsPlayerAlive(trid)) //CT win
-			{
-				if(extra > 0)
-				{
-					int money = GetEntProp(ctid, Prop_Send, "m_iAccount");
-					SetEntProp(ctid, Prop_Send, "m_iAccount", money+extra);
-				}
-			}
-			else if(IsPlayerAlive(trid) && !IsPlayerAlive(ctid)) //TR win
-			{
-				if(extra > 0)
-				{
-					int money = GetEntProp(trid, Prop_Send, "m_iAccount");
-					SetEntProp(trid, Prop_Send, "m_iAccount", money+extra);
-				}
-			}
+			int money = GetEntProp(ctid, Prop_Send, "m_iAccount");
+			SetEntProp(ctid, Prop_Send, "m_iAccount", money+extra);
 		}
 	}
+
+	DuelStarted = false;
+	NoScopeEnabled = false;
+}
+
+public Action Event_RoundEnd(Handle event, const char[] name, bool dontBroadcast) 
+{ 
+	if(DuelStarted)
+		FinishDuel();
 	
 	ctid = 0, trid = 0;
-	SemMiraEnabled = false;
-	DueloSemMira = false;
+	NoScopeEnabled = false;
+	DuelStarted = false;
 	g_VoteMenu = INVALID_HANDLE;
 
 	if(g_hTimeDuel != INVALID_HANDLE)
@@ -614,8 +633,8 @@ public Action AtivarMira(Handle event, const char[] name, bool dontBroadcast)
 
 public void StartDuel()
 {
-	SemMiraEnabled = true;
-	DueloSemMira = true;
+	NoScopeEnabled = true;
+	DuelStarted = true;
 
 	if(GetConVarInt(g_hSound) == 1)
 	{	
@@ -684,7 +703,7 @@ void SetDuelPlayer(int client)
 
 public Action SetDuelConditions(Handle timer)
 {
-	if(DueloSemMira && IsValidClient(ctid) && IsValidClient(trid))
+	if(DuelStarted && IsValidClient(ctid) && IsValidClient(trid))
 	{
 		char DuelWeapon[255];
 		GetConVarString(g_hDuelArma, DuelWeapon, sizeof(DuelWeapon));
@@ -772,7 +791,7 @@ public Action cmsg(Handle timer, any client)
 
 public Action TeleportPlayers(Handle timer, any client)
 {
-	if(DueloSemMira && IsValidClient(ctid) && IsPlayerAlive(ctid) && IsValidClient(trid) && IsPlayerAlive(trid))
+	if(DuelStarted && IsValidClient(ctid) && IsPlayerAlive(ctid) && IsValidClient(trid) && IsPlayerAlive(trid))
 	{
 		float ctvec[3];
 		float tvec[3];
@@ -790,7 +809,7 @@ public Action TeleportPlayers(Handle timer, any client)
 
 public Action DoTp(Handle timer)
 {
-	if(DueloSemMira && IsValidClient(trid) && IsPlayerAlive(trid))
+	if(DuelStarted && IsValidClient(trid) && IsPlayerAlive(trid))
 	{
 		TeleportEntity(trid, teleloc, NULL_VECTOR, NULL_VECTOR);
 	}
