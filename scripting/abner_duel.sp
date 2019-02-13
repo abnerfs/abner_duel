@@ -9,7 +9,7 @@
 
 #define MAX_EDICTS		2048
 #define MAX_SOUNDS		1024
-#define PLUGIN_VERSION "4.0.1"
+#define PLUGIN_VERSION "4.0.2"
 #define m_flNextSecondaryAttack FindSendPropInfo("CBaseCombatWeapon", "m_flNextSecondaryAttack")
 #pragma newdecls required 
 
@@ -43,6 +43,8 @@ bool DuelStarted = false;
 bool CSGO;
 
 ArrayList sounds;
+ArrayList ctItens;
+ArrayList trItens;
 
 //Beacon Stuff
 int g_BeaconSerial[MAXPLAYERS+1] = { 0, ... };
@@ -162,7 +164,9 @@ public void OnClientPutInServer(int client)
 {
 	if(GetConVarInt(g_DuelMsg) == 1)
 		CreateTimer(3.0, msg, client);
+
 	SDKHook(client, SDKHook_PreThink, PreThink);
+	SDKHook(client, SDKHook_WeaponEquip, OnWeaponEquip);
 }
 
 public Action msg(Handle timer, any client)
@@ -513,6 +517,37 @@ public Action CommandLoad(int client, int args)
 	return Plugin_Handled;
 }
 
+
+stock bool CheckWeapon(int entity) {
+    if(!IsValidEdict(entity))
+        return false;
+
+    char weapons[5000];
+    GetConVarString(g_hDuelArma, weapons, sizeof(weapons));
+
+    char sWeapon[32];
+    GetEdictClassname(entity, sWeapon, sizeof(sWeapon));
+
+    if(StrContains(weapons, sWeapon, false) > -1) {
+        return true;
+    }
+
+    return false;
+}
+
+
+public Action OnWeaponEquip(int client, int weapon)
+{
+	if(!DuelStarted)
+		return Plugin_Continue;
+
+	if(CheckWeapon(weapon))
+		return Plugin_Continue;
+
+	return Plugin_Handled;
+} 
+
+
 public Action CommandSemMira(int client, int args)
 {   
 	if(NoScopeEnabled)
@@ -563,8 +598,9 @@ public Action CheckDuel(Handle time, any client)
 
 public Action PlayerDeath(Handle event, const char[] name, bool dontBroadcast) 
 { 
-	if(DuelStarted)
+	if(DuelStarted) 
 		return Plugin_Continue;
+	
 
 	if(CSGO && GameRules_GetProp("m_bWarmupPeriod") == 1)
 		return Plugin_Continue;
@@ -603,6 +639,12 @@ void FinishDuel() {
 	}
 
 	if(winner > 0) {
+		DropWeapons(winner, null);
+		if(ctAlive)
+			ReturnWeapons(winner, ctItens);
+		else if(trAlive)
+			ReturnWeapons(winner, trItens);
+
 		if(extra > 0)
 		{
 			int money = GetEntProp(ctid, Prop_Send, "m_iAccount");
@@ -683,6 +725,14 @@ public void StartDuel()
 		CreateBeacon(trid);
 	}
 	DeleteAllWeapons();
+
+	ctItens = new ArrayList();
+	trItens = new ArrayList();
+
+	DropWeapons(ctid, ctItens);
+	DropWeapons(trid, trItens);
+
+
 	CreateTimer(3.0, SetDuelConditions);
 	CPrintToChatAll("{green}[AbNeR Duel] {default}%t", "Start Duel");
 }
@@ -742,11 +792,55 @@ public void DeleteAllWeapons()
 			GetEdictClassname(i, strName, sizeof(strName));
 			if(StrContains(strName, "weapon_", false) == -1 && StrContains(strName, "item_", false) == -1)
 				continue;
+
+			int client = GetEntPropEnt(i, Prop_Data, "m_hOwnerEntity");  
+			if(client == ctid || client == trid) {
+				continue;
+			}
+
+
 			RemoveEdict(i);
 		}
 	}
 }
 
+
+public void DropWeapons(int client, ArrayList arr) {
+	for (int i = 0; i < 5; i++)
+	{
+		int weapon = GetPlayerWeaponSlot(client, i);
+		while(weapon != -1) {
+			CS_DropWeapon(client, weapon, true, true);
+			if(arr != null)
+				arr.Push(EntIndexToEntRef(weapon));
+			else
+				RemoveEdict(weapon);
+
+			weapon = GetPlayerWeaponSlot(client, i);
+		}
+	}
+}
+
+public void ReturnWeapons(int client, ArrayList arr) {
+	for(int i = 0; i < arr.Length;i ++ ){
+		int weapon = arr.Get(i);
+		
+		DataPack pack = new DataPack();
+		pack.WriteCell(client);
+		pack.WriteCell(weapon);
+		CreateTimer(0.1, wTime, pack);
+	}
+}
+
+public Action wTime(Handle time, DataPack pack)
+{
+	pack.Reset();
+	int client = pack.ReadCell();
+	int weapon = EntRefToEntIndex(pack.ReadCell());
+	if(IsValidClient(client) && IsPlayerAlive(client) && IsValidEdict(weapon)) {
+		EquipPlayerWeapon(client, weapon);
+	}
+}
 
 int GiveItem(int client, char[] weapon, int index=0)
 {
