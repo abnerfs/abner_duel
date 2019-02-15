@@ -9,7 +9,7 @@
 
 #define MAX_EDICTS		2048
 #define MAX_SOUNDS		1024
-#define PLUGIN_VERSION "4.0.2"
+#define PLUGIN_VERSION "4.0.3"
 #define m_flNextSecondaryAttack FindSendPropInfo("CBaseCombatWeapon", "m_flNextSecondaryAttack")
 #pragma newdecls required 
 
@@ -389,9 +389,8 @@ public void Event_RoundStart(Handle event, const char[] name, bool dontBroadcast
 
 public int VoteMenuHandler(Handle menu, MenuAction action, int param1, int param2)
 {
-	if (action == MenuAction_Select)
-	{
-		if(g_VoteMenu != INVALID_HANDLE)
+	if(g_VoteMenu != INVALID_HANDLE)
+		if (action == MenuAction_Select)
 		{
 			switch (param2)
 			{
@@ -402,11 +401,10 @@ public int VoteMenuHandler(Handle menu, MenuAction action, int param1, int param
 					nao(param1);
 			}
 		}
-	}
-	else if(action == MenuAction_End)
-	{
-		delete menu;
-	}
+		else if(action == MenuAction_End)
+		{
+			delete menu;
+		}
 	return 0;
 }
 
