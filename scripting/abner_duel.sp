@@ -9,7 +9,7 @@
 
 #define MAX_EDICTS		2048
 #define MAX_SOUNDS		1024
-#define PLUGIN_VERSION "4.0.4"
+#define PLUGIN_VERSION "4.0.5"
 #define m_flNextSecondaryAttack FindSendPropInfo("CBaseCombatWeapon", "m_flNextSecondaryAttack")
 #pragma newdecls required 
 
@@ -401,11 +401,7 @@ public int VoteMenuHandler(Handle menu, MenuAction action, int param1, int param
 					nao(param1);
 			}
 		}
-		else if(action == MenuAction_End)
-		{
-			if(menu != INVALID_HANDLE)
-				delete menu;
-		}
+	
 	return 0;
 }
 
