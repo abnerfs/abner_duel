@@ -9,7 +9,7 @@
 
 #define MAX_EDICTS		2048
 #define MAX_SOUNDS		1024
-#define PLUGIN_VERSION "4.0.5"
+#define PLUGIN_VERSION "4.0.6"
 #define m_flNextSecondaryAttack FindSendPropInfo("CBaseCombatWeapon", "m_flNextSecondaryAttack")
 #pragma newdecls required 
 
@@ -804,12 +804,15 @@ public void DropWeapons(int client, ArrayList arr) {
 	for (int i = 0; i < 5; i++)
 	{
 		int weapon = GetPlayerWeaponSlot(client, i);
-		while(weapon != -1) {
-			CS_DropWeapon(client, weapon, true, true);
-			if(arr != null)
-				arr.Push(EntIndexToEntRef(weapon));
-			else
-				RemoveEdict(weapon);
+		while(IsValidEdict(weapon)) {
+			int owner = GetEntPropEnt(weapon, Prop_Data, "m_hOwnerEntity");  
+			if(owner == client) {
+				CS_DropWeapon(client, weapon, true, true);
+				if(arr != null)
+					arr.Push(EntIndexToEntRef(weapon));
+				else
+					RemoveEdict(weapon);
+			}
 
 			weapon = GetPlayerWeaponSlot(client, i);
 		}
