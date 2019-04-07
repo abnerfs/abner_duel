@@ -127,4 +127,3 @@ void PlaySoundClient(int client, char[] szSound, float selectedVolume)
     EmitSoundToClientAny(client, szSound, -2, 0, 0, 0, selectedVolume, 100, -1, NULL_VECTOR, NULL_VECTOR, true, 0.0);
 }
 
-
