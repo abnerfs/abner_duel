@@ -10,17 +10,17 @@
 
 #define MAX_EDICTS		2048
 #define MAX_SOUNDS		1024
-#define PLUGIN_VERSION "4.0.7"
+#define PLUGIN_VERSION "4.0.8"
 #define m_flNextSecondaryAttack FindSendPropInfo("CBaseCombatWeapon", "m_flNextSecondaryAttack")
 #pragma newdecls required 
 
 int g_S = 0, g_N = 0;
+
 int  trid = 0;
 int  ctid = 0;
 float teleloc[3];
 int  seconds = 0;
 
-Handle g_VoteMenu = INVALID_HANDLE;
 Handle g_hDuel;
 Handle g_hSound;
 ConVar g_hSoundPath;
@@ -372,8 +372,6 @@ public void Event_RoundStart(Handle event, const char[] name, bool dontBroadcast
 	ctid = 0, trid = 0;
 	NoScopeEnabled = false;
 	DuelStarted = false;
-	
-	g_VoteMenu = INVALID_HANDLE;
 
 	if(g_hTimeDuel != INVALID_HANDLE)
 	{
@@ -390,67 +388,68 @@ public void Event_RoundStart(Handle event, const char[] name, bool dontBroadcast
 
 public int VoteMenuHandler(Handle menu, MenuAction action, int param1, int param2)
 {
-	if(g_VoteMenu != INVALID_HANDLE)
-		if (action == MenuAction_Select)
-		{
-			switch (param2)
-			{
-				case 0:
-					sim(param1);
-				
-				case 1:
-					nao(param1);
-			}
-		}
-	
-	return 0;
-}
-
-public void ShowMenuAll()
-{
-	g_S = 0, g_N =0;
-	g_VoteMenu = CreateMenu(VoteMenuHandler);
-	char text[128];
-	Format(text,sizeof(text),"%t", "Duel Ask");
-	SetMenuTitle(g_VoteMenu, text);
-	Format(text,sizeof(text),"%t", "Yes");
-	AddMenuItem(g_VoteMenu, "Yes", text);
-	Format(text,sizeof(text),"%t", "No");
-	AddMenuItem(g_VoteMenu, "No", text);
-	SetMenuExitButton(g_VoteMenu, false);
-	
-	for (int  client = 1; client <= MaxClients; client++)
+	if (action == MenuAction_Select)
 	{
-		if(IsValidClient(client) && IsPlayerAlive(client))
+		switch (param2)
 		{
-			if (!IsFakeClient(client))
-			{
-				switch(GetIntCookie(client, g_DuelCookie))
-				{
-					case 1:
-						sim(client);
-					case 2:
-						nao(client);
-					case 0:
-					{
-						if(g_VoteMenu != INVALID_HANDLE)
-						{
-							DisplayMenu(g_VoteMenu, client, MENU_TIME_FOREVER);
-						}
-					}
-				}
-			}
-			else
-			{
-				sim(client);
-			}
+			case 0:
+				VoteYes(param1);
+			
+			case 1:
+				VoteNo(param1);
 		}
 	}
 }
 
-public void sim(int client)
+public void ShowMenuAll()
 {
-	if(g_VoteMenu == INVALID_HANDLE)
+	g_S = 0, g_N = 0;
+
+	char text[200];
+
+	Menu menu = CreateMenu(VoteMenuHandler);
+	menu.SetTitle("%t", "Duel Ask");
+
+	Format(text,sizeof(text),"%t", "Yes");
+	menu.AddItem("Yes", text);
+
+	Format(text,sizeof(text),"%t", "No");
+	menu.AddItem("No", text);
+
+	menu.ExitBackButton = false;
+	menu.ExitButton = false;
+
+	ShowMenu(menu, ctid);
+	ShowMenu(menu, trid);
+
+}
+
+void ShowMenu(Menu menu, int client) {
+	if(!IsValidClient(client) || !IsPlayerAlive(client))
+		return;
+	
+	if(IsFakeClient(client)) {
+		VoteYes(client);
+		return;
+	}
+
+	int cookie = GetIntCookie(client, g_DuelCookie);
+	switch(cookie) {
+		case 0:
+			menu.Display(client, MENU_TIME_FOREVER);
+		case 1:
+			VoteYes(client);
+		case 2:
+			VoteNo(client);
+
+	}
+}
+
+
+
+public void VoteYes(int client)
+{
+	if(ctid != client && trid != client)
 		return;
 		
 	char nome[MAX_TARGET_LENGTH];
@@ -468,9 +467,9 @@ public void sim(int client)
 	check_votes();
 }
 
-public void nao(int client)
+public void VoteNo(int client)
 {
-	if(g_VoteMenu == INVALID_HANDLE)
+	if(ctid != client && trid != client)
 		return;
 		
 	char nome[MAX_TARGET_LENGTH];
@@ -501,10 +500,7 @@ public void check_votes()
 		StartDuel();
 	}
 	else if (g_N >= 1)
-	{
 		CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Duel Canceled");
-		g_VoteMenu = INVALID_HANDLE;
-	}
 }
 
 public Action CommandLoad(int client, int args)
@@ -603,6 +599,8 @@ public Action PlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 	
 	if(trs_vivos() == 1 && cts_vivos() == 1)
 	{
+		SetIDs();
+
 		if(GetConVarInt(g_hDuel) == 1)
 		{
 			ShowMenuAll();
@@ -660,7 +658,6 @@ public Action Event_RoundEnd(Handle event, const char[] name, bool dontBroadcast
 	ctid = 0, trid = 0;
 	NoScopeEnabled = false;
 	DuelStarted = false;
-	g_VoteMenu = INVALID_HANDLE;
 
 	if(g_hTimeDuel != INVALID_HANDLE)
 	{
@@ -669,10 +666,35 @@ public Action Event_RoundEnd(Handle event, const char[] name, bool dontBroadcast
 	}
 }
 
+void SetIDs() {
+	for (int  i = 1; i <= MaxClients; i++)
+	{
+		if(IsValidClient(i) && IsPlayerAlive(i))
+		{
+			if(GetClientTeam(i) == 2)
+			{
+				trid = i;
+			}
+			else if(GetClientTeam(i) == 3)
+			{
+				ctid = i;
+			}
+		}
+	}
+}
+
+void SetDuelStartPlayer(int client) {
+	SetEntProp(client, Prop_Data, "m_takedamage", 0, 1);
+	SetEntData(client, FindSendPropInfo("CBaseEntity", "m_CollisionGroup"), 2, 4, true);
+}
+
 public void StartDuel()
 {
 	NoScopeEnabled = true;
 	DuelStarted = true;
+
+	SetDuelStartPlayer(ctid);
+	SetDuelStartPlayer(trid);
 
 	if(GetConVarInt(g_hSound) == 1)
 	{	
@@ -688,28 +710,6 @@ public void StartDuel()
 		}
 	}
 	
-	g_VoteMenu = INVALID_HANDLE;
-	
-	for (int  i = 1; i <= MaxClients; i++)
-	{
-		if(IsValidClient(i) && IsPlayerAlive(i))
-		{
-			if(GetClientTeam(i) == 2)
-			{
-				trid = i;
-				SetEntProp(i, Prop_Data, "m_takedamage", 0, 1);
-				SetEntData(i, FindSendPropInfo("CBaseEntity", "m_CollisionGroup"), 2, 4, true);
-
-			}
-			else if(GetClientTeam(i) == 3)
-			{
-				ctid = i;
-				SetEntProp(i, Prop_Data, "m_takedamage", 0, 1);
-				SetEntData(i, FindSendPropInfo("CBaseEntity", "m_CollisionGroup"), 2, 4, true);
-			}
-		}
-	}
-		
 	if(GetConVarInt(g_hTP) == 1)
 	{
 		CreateTimer(0.1, TeleportPlayers);
