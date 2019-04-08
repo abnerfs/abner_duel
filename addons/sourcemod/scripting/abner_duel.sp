@@ -10,7 +10,7 @@
 
 #define MAX_EDICTS		2048
 #define MAX_SOUNDS		1024
-#define PLUGIN_VERSION "4.0.8"
+#define PLUGIN_VERSION "4.0.9"
 #define m_flNextSecondaryAttack FindSendPropInfo("CBaseCombatWeapon", "m_flNextSecondaryAttack")
 #pragma newdecls required 
 
@@ -806,7 +806,7 @@ public void DropWeapons(int client, ArrayList arr) {
 	{
 		int weapon = GetPlayerWeaponSlot(client, i);
 		while(weapon != -1) {
-			CS_DropWeapon(client, weapon, true, true);
+			RemovePlayerItem(client, weapon);
 			if(arr != null)
 				arr.Push(EntIndexToEntRef(weapon));
 			else	
