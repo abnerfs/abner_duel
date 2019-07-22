@@ -126,4 +126,9 @@
 		"pt" 		"segundos restantes."
 		"ru" 		"секунд осталось."
 	}
+	"No Duels allowed! (Aim map)"
+	{
+		"en"		"No Duels allowed! (Aim map)"
+		"pt"		"Duelo não permitido (Mapa de Aim)"
+	}
 }
