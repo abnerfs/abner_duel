@@ -10,7 +10,7 @@
 
 #define MAX_EDICTS		2048
 #define MAX_SOUNDS		1024
-#define PLUGIN_VERSION "4.0.9"
+#define PLUGIN_VERSION "4.1.0"
 #define m_flNextSecondaryAttack FindSendPropInfo("CBaseCombatWeapon", "m_flNextSecondaryAttack")
 #pragma newdecls required 
 
@@ -22,6 +22,7 @@ float teleloc[3];
 int  seconds = 0;
 
 Handle g_hDuel;
+Handle g_hBlockAimMap;
 Handle g_hSound;
 ConVar g_hSoundPath;
 Handle g_DuelCookie;
@@ -93,6 +94,7 @@ public void OnPluginStart()
 	/*																		CVARS																														*/
 	CreateConVar("abner_duel_version", PLUGIN_VERSION, "Plugin Version", FCVAR_NOTIFY|FCVAR_REPLICATED);
 	g_hDuelArma 										= CreateConVar("duel_weapon", "weapon_awp;weapon_knife", "Weapons used in 1v1 duel");
+	g_hBlockAimMap 										= CreateConVar("duel_block_aim_map", "1", "0 - Duel Active on aim_ Maps, 1 - Duel Inactive on aim_ Maps");
 	g_hDuel 											= CreateConVar("duel_1x1", "1", "0 - Disabled, 1 - Vote, 2 - Force duel ");
 	g_hSound											= CreateConVar("duel_music", "1", "Enable/Disable 1x1 Music");
 
@@ -603,7 +605,23 @@ public Action PlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 
 		if(GetConVarInt(g_hDuel) == 1)
 		{
-			ShowMenuAll();
+			if(GetConVarInt(g_hBlockAimMap) == 1)
+			{
+				//Checks if this is a "aim_" map
+				char mapname[128];
+				GetCurrentMap(mapname, sizeof(mapname));
+				if (strncmp(mapname, "aim_", 4) == 0) {
+					CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "No Duels allowed! (Aim map)");
+				}
+				else
+				{
+					ShowMenuAll();
+				}
+			}
+			else
+			{
+				ShowMenuAll();
+			}
 		}
 		else if(GetConVarInt(g_hDuel) == 2)
 		{
