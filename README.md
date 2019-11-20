@@ -1,4 +1,7 @@
 # [CSS/CS:GO] AbNeR Duel (NoScope)
+
+![Downloads](https://img.shields.io/github/downloads/abnerfs/abner_duel/total) ![Last commit](https://img.shields.io/github/last-commit/abnerfs/abner_duel "Last commit") ![Open issues](https://img.shields.io/github/issues/abnerfs/abner_duel "Open Issues") ![Closed issues](https://img.shields.io/github/issues-closed/abnerfs/abner_duel "Closed Issues") ![Size](https://img.shields.io/github/repo-size/abnerfs/dontpad-api "Size")
+
 NoScope duel when remain 1v1.
 
 
