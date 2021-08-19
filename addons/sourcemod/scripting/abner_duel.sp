@@ -41,6 +41,7 @@ Handle g_Health;
 
 bool NoScopeEnabled = false;
 bool DuelStarted = false;
+bool BombIsPlanted = false;
 bool CSGO;
 
 ArrayList sounds;
@@ -134,6 +135,7 @@ public void OnPluginStart()
 	HookEvent("player_spawn", PlayerSpawn);
 	HookEvent("round_start", Event_RoundStart);
 	HookEvent("round_end", Event_RoundEnd);
+	HookEvent("bomb_planted", BombPlanted);
 
 	CSGO = GetEngineVersion() == Engine_CSGO; 
 
@@ -372,6 +374,7 @@ public void Event_RoundStart(Handle event, const char[] name, bool dontBroadcast
 	ctid = 0, trid = 0;
 	NoScopeEnabled = false;
 	DuelStarted = false;
+	BombIsPlanted = false;
 
 	if(g_hTimeDuel != INVALID_HANDLE)
 	{
@@ -452,6 +455,8 @@ public void VoteYes(int client)
 	if(ctid != client && trid != client)
 		return;
 		
+    if (BombIsPlanted) return;
+    
 	char nome[MAX_TARGET_LENGTH];
 	GetClientName(client, nome, sizeof(nome));
 	g_S++;
@@ -471,6 +476,8 @@ public void VoteNo(int client)
 {
 	if(ctid != client && trid != client)
 		return;
+    
+    if (BombIsPlanted) return;
 		
 	char nome[MAX_TARGET_LENGTH];
 	GetClientName(client, nome, sizeof(nome));
@@ -592,8 +599,10 @@ public Action PlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 { 
 	if(DuelStarted) 
 		return Plugin_Continue;
+		
+    if(BombIsPlanted) 
+		return Plugin_Continue;
 	
-
 	if(CSGO && GameRules_GetProp("m_bWarmupPeriod") == 1)
 		return Plugin_Continue;
 	
@@ -614,6 +623,10 @@ public Action PlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 }
 
 
+public Action BombPlanted(Event hEvent, const char[] name, bool dontBroadcast) 
+{
+	BombIsPlanted = true;
+}
 
 
 void FinishDuel() {
@@ -746,7 +759,7 @@ void SetDuelPlayer(int client)
 	SetEntProp(client, Prop_Data, "m_takedamage", 2, 1);
 	
 }
-
+    
 public Action SetDuelConditions(Handle timer)
 {
 	if(DuelStarted && IsValidClient(ctid) && IsValidClient(trid))
