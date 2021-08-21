@@ -38,6 +38,7 @@ Handle g_DuelMsg;
 Handle g_WinnerCash;
 Handle g_hDuelArma;
 Handle g_Health;
+Handle g_RandomWeapon;
 
 bool NoScopeEnabled = false;
 bool DuelStarted = false;
@@ -106,13 +107,12 @@ public void OnPluginStart()
 	g_hFightTime                                        = CreateConVar("duel_fight_time", "30", "Max duel time in second, 0 to disable");
 	g_hIammo                                            = CreateConVar("duel_iammo", "1", "Infinity Ammo in Duel");
 
-
 	g_DuelBeacon                                        = CreateConVar("duel_beacon", "1", "Enable/Disable player beacon in Duel");
-
 	g_DuelMsg                                           = CreateConVar("duel_join_msg", "1", "Enable/Disable join message.");
-
 	g_WinnerCash                                        = CreateConVar("duel_winner_extracash", "2000", "Give extra cash to the winner!");
 	g_Health											= CreateConVar("duel_health", "100", "Health that players will have in duel, 0 - Doesn't change current health");
+
+    g_RandomWeapon                                      = CreateConVar("duel_random_weapon", "0", "0 - give all weapons from duel_weapon, 1 - random weapon from duel_weapon");
 	
 	/*                                                                      ClientPrefs	    																				*/
 	g_DuelCookie 									 	= RegClientCookie("AbNeR Duel Settings", "", CookieAccess_Private);
@@ -146,8 +146,6 @@ public void OnPluginStart()
 			OnClientPutInServer(i);
 	}
 }
-
-
 
 
 bool isNoScopeWeapon(char[] weapon)
@@ -360,7 +358,8 @@ public void PlaySoundAll(char[] szSound)
 		
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if(IsValidClient(i) && GetIntCookie(i, g_SoundsCookie) == 0)
+		//if(IsValidClient(i) && GetIntCookie(i, g_SoundsCookie) == 0)
+		if(IsValidClient(i) && !IsFakeClient(i))
 		{
 			PlaySoundClient(i, szSound, 1.0);
 		}
@@ -741,11 +740,9 @@ public void StartDuel()
 	DropWeapons(ctid, ctItens);
 	DropWeapons(trid, trItens);
 
-
 	CreateTimer(3.0, SetDuelConditions);
 	CPrintToChatAll("{green}[AbNeR Duel] {default}%t", "Start Duel");
 }
-
 
 void SetDuelPlayer(int client)
 {
@@ -757,7 +754,6 @@ void SetDuelPlayer(int client)
 		SetEntProp(client, Prop_Send, "m_iHealth", Health, 1);
 
 	SetEntProp(client, Prop_Data, "m_takedamage", 2, 1);
-	
 }
     
 public Action SetDuelConditions(Handle timer)
@@ -769,16 +765,21 @@ public Action SetDuelConditions(Handle timer)
 
 		char arrWeapons[10][255];
 		int count = ExplodeString(DuelWeapon, ";", arrWeapons, sizeof(arrWeapons), sizeof(arrWeapons[]));
-
-		for(int i = 0;i < count;i++)
-		{
-			GiveItem(ctid, arrWeapons[i]);
-			GiveItem(trid, arrWeapons[i]);
-		}
 		
+        if(GetConVarInt(g_RandomWeapon) == 1) {
+            int randomIndex = GetRandomInt(0, count-1);
+            GiveItem(ctid, arrWeapons[randomIndex]);
+            GiveItem(trid, arrWeapons[randomIndex]);
+        } else {
+            for(int i = 0;i < count;i++)
+            {
+            	GiveItem(ctid, arrWeapons[i]);
+            	GiveItem(trid, arrWeapons[i]);
+            }
+		}
+
 		SetDuelPlayer(trid);
 		SetDuelPlayer(ctid);
-		
 		
 		char fighttime[32];
 		GetConVarString(g_hFightTime, fighttime, sizeof(fighttime));
@@ -807,7 +808,6 @@ public void DeleteAllWeapons()
 				continue;
 			}
 
-
 			RemoveEdict(i);
 		}
 	}
@@ -815,7 +815,7 @@ public void DeleteAllWeapons()
 
 
 public void DropWeapons(int client, ArrayList arr) {
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 13; i++)
 	{
 		int weapon = GetPlayerWeaponSlot(client, i);
 		while(weapon != -1) {
