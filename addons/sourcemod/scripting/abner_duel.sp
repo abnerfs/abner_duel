@@ -39,6 +39,7 @@ Handle g_WinnerCash;
 Handle g_hDuelArma;
 Handle g_Health;
 Handle g_RandomWeapon;
+Handle g_SpeedAward;
 
 bool NoScopeEnabled = false;
 bool DuelStarted = false;
@@ -61,6 +62,10 @@ int redColor[4]		= {255, 75, 75, 255};
 int greenColor[4]	= {75, 255, 75, 255};
 int blueColor[4]	= {75, 75, 255, 255};
 int greyColor[4]	= {128, 128, 128, 255};
+
+// Players speed
+int m_flLaggedMovementValue;
+int g_AwardedPlayer;
 
 char csgoWeapons[][] = {
 	"weapon_awp", "weapon_ak47", "weapon_aug", "weapon_bizon", "weapon_deagle", "weapon_decoy", "weapon_elite", "weapon_famas", "weapon_fiveseven", "weapon_flashbang",
@@ -113,6 +118,7 @@ public void OnPluginStart()
 	g_Health											= CreateConVar("duel_health", "100", "Health that players will have in duel, 0 - Doesn't change current health");
 
     g_RandomWeapon                                      = CreateConVar("duel_random_weapon", "0", "0 - give all weapons from duel_weapon, 1 - random weapon from duel_weapon");
+    g_SpeedAward                                        = CreateConVar("duel_speed_award", "0.0", "Speed award for winner (for example, '1.2' will increase speed by 20%)");
 	
 	/*                                                                      ClientPrefs	    																				*/
 	g_DuelCookie 									 	= RegClientCookie("AbNeR Duel Settings", "", CookieAccess_Private);
@@ -145,6 +151,11 @@ public void OnPluginStart()
 		if(IsValidClient(i))
 			OnClientPutInServer(i);
 	}
+	
+	m_flLaggedMovementValue = FindSendPropInfo("CCSPlayer", "m_flLaggedMovementValue");
+	
+	if (!m_flLaggedMovementValue)
+		SetFailState("Unable to get m_flLaggedMovementValue offset");
 }
 
 
@@ -174,7 +185,7 @@ public Action msg(Handle timer, any client)
 {
 	if(IsValidClient(client))
 	{
-		CPrintToChat(client, "{green}[AbNeR Duel]\x01 %t", "command");
+		CPrintToChat(client, "{green}[Duel]\x01 %t", "command");
 	}
 }
 
@@ -345,9 +356,9 @@ void RefreshSounds(int client)
 {
 	int size = LoadSounds(sounds, g_hSoundPath);
 	if(size > 0)
-		CReplyToCommand(client, "{green}[AbNeR Duel] {default}Loaded %d sounds.", size);
+		CReplyToCommand(client, "{green}[Duel] {default}Loaded %d sounds.", size);
 	else
-		CReplyToCommand(client, "{green}[AbNeR Duel] {default}INVALID SOUND PATH");
+		CReplyToCommand(client, "{green}[Duel] {default}INVALID SOUND PATH");
 }
 
 
@@ -385,6 +396,8 @@ public void Event_RoundStart(Handle event, const char[] name, bool dontBroadcast
 	{
 		MapSounds();
 	}
+	
+	if (g_AwardedPlayer && g_AwardedPlayer != -1) GiveSpeed(g_AwardedPlayer);
 }
 
 
@@ -462,11 +475,11 @@ public void VoteYes(int client)
 	
 	if(GetClientTeam(client) == 2)
 	{
-		CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Duel Accepted Red", nome);
+		CPrintToChatAll("{green}[Duel] \x01%t", "Duel Accepted Red", nome);
 	}
 	else if(GetClientTeam(client) == 3)
 	{
-		CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Duel Accepted Blue", nome);
+		CPrintToChatAll("{green}[Duel] \x01%t", "Duel Accepted Blue", nome);
 	}
 	check_votes();
 }
@@ -486,10 +499,10 @@ public void VoteNo(int client)
 	switch(team)
 	{
 		case 2: {
-			CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Duel Refused Red", nome);
+			CPrintToChatAll("{green}[Duel] \x01%t", "Duel Refused Red", nome);
 		}
 		case 3: {
-			CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Duel Refused Blue", nome);
+			CPrintToChatAll("{green}[Duel] \x01%t", "Duel Refused Blue", nome);
 		}
 	}
 	
@@ -506,7 +519,7 @@ public void check_votes()
 		StartDuel();
 	}
 	else if (g_N >= 1)
-		CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Duel Canceled");
+		CPrintToChatAll("{green}[Duel] \x01%t", "Duel Canceled");
 }
 
 public Action CommandLoad(int client, int args)
@@ -551,7 +564,7 @@ public Action CommandSemMira(int client, int args)
 	if(NoScopeEnabled)
 	{
 		NoScopeEnabled = false;
-		CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Scope On");
+		CPrintToChatAll("{green}[Duel] \x01%t", "Scope On");
 		for (int  i = 1; i <= MaxClients; i++)
 		{
 			if(IsValidClient(i) && IsPlayerAlive(i))
@@ -577,7 +590,7 @@ public Action CommandSemMira(int client, int args)
 	else
 	{
 		NoScopeEnabled = true;
-		CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Scope Off");
+		CPrintToChatAll("{green}[Duel] \x01%t", "Scope Off");
 		return Plugin_Handled;
 	}
 }
@@ -585,7 +598,10 @@ public Action CommandSemMira(int client, int args)
 public Action PlayerSpawn(Handle event, const char[] name, bool dontBroadcast) 
 { 	
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
-	CreateTimer(0.1, CheckDuel, client);
+	if (client != trid && client != ctid)
+        CreateTimer(0.1, CheckDuel, client);
+        
+    //if (g_AwardedPlayer == client) GiveSpeed(client);
 }
 
 public Action CheckDuel(Handle time, any client)
@@ -596,6 +612,9 @@ public Action CheckDuel(Handle time, any client)
 
 public Action PlayerDeath(Handle event, const char[] name, bool dontBroadcast) 
 { 
+    int client = GetClientOfUserId(GetEventInt(event, "userid"));
+    if (g_AwardedPlayer == client) g_AwardedPlayer = -1;
+    
 	if(DuelStarted) 
 		return Plugin_Continue;
 		
@@ -656,6 +675,11 @@ void FinishDuel() {
 			int money = GetEntProp(ctid, Prop_Send, "m_iAccount");
 			SetEntProp(ctid, Prop_Send, "m_iAccount", money+extra);
 		}
+		
+		if (GetConVarFloat(g_SpeedAward) != 0.0) {
+            GiveSpeed(winner);
+            g_AwardedPlayer = winner;
+		} 
 	}
 
 	DuelStarted = false;
@@ -741,7 +765,7 @@ public void StartDuel()
 	DropWeapons(trid, trItens);
 
 	CreateTimer(3.0, SetDuelConditions);
-	CPrintToChatAll("{green}[AbNeR Duel] {default}%t", "Start Duel");
+	CPrintToChatAll("{green}[Duel] {default}%t", "Start Duel");
 }
 
 void SetDuelPlayer(int client)
@@ -887,7 +911,7 @@ public Action cmsg(Handle timer, any client)
 				ForcePlayerSuicide(i);
 			}
 		}
-		CPrintToChatAll("{green}[AbNeR Duel] \x01%t", "Duel Canceled");
+		CPrintToChatAll("{green}[Duel] \x01%t", "Duel Canceled");
 	}
 	return Plugin_Continue;
 }
@@ -1033,4 +1057,27 @@ stock bool IsValidClient(int client)
 	if(client > MaxClients) return false;
 	if(!IsClientConnected(client)) return false;
 	return IsClientInGame(client);
+}
+
+
+public Action GiveSpeed(int iClient)
+{
+	SetEntDataFloat(iClient, m_flLaggedMovementValue, GetConVarFloat(g_SpeedAward), true);
+	
+	char nome[MAX_TARGET_LENGTH];
+	GetClientName(iClient, nome, sizeof(nome));
+	
+	if (g_AwardedPlayer != iClient) {
+        if(GetClientTeam(iClient) == 2)
+        {
+            CPrintToChatAll("{green}[Duel] \x01%t", "Speed Award Red", nome);
+        }
+        else if(GetClientTeam(iClient) == 3)
+        {
+            CPrintToChatAll("{green}[Duel] \x01%t", "Speed Award Blue", nome);
+        }
+	}
+	
+	
+	return Plugin_Continue;
 }
