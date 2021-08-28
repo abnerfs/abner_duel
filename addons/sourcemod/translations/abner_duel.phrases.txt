@@ -126,4 +126,16 @@
 		"pt" 		"segundos restantes."
 		"ru" 		"секунд осталось."
 	}
+	"Speed Award Blue"
+	{
+		"#format"		"{1:s}"
+		"en"			"Player {blue}{1}{default} awarded for victory in duel with increased speed!"
+		"ru"			"Игрок {blue}{1}{default} награжден за победу в дуэли увеличенной скоростью!"
+	}
+	"Speed Award Red"
+	{
+		"#format"		"{1:s}"
+		"en"			"Player {red}{1}{default} awarded for victory with increased speed!"
+		"ru"			"Игрок {red}{1}{default} награжден за победу в дуэли увеличенной скоростью!"
+	}
 }
