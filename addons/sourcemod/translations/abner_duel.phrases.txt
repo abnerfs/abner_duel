@@ -1,129 +1,154 @@
 "Phrases"
 {
-	"Start Duel"
-	{
-		"en" 	"Starting 1v1 duel."
-		"pt" 	"Começando duelo 1v1."
-		"ru" 	"Начинаем 1х1 поединок."
-	}
-	"Marked"
-	{
-		"en" 	"(X)"
-		"pt" 	"(X)"
-		"ru" 	"(X)"
-	}
-	"Yes"
-	{
-		"en" 	"Yes"
-		"pt" 	"Sim"
-		"ru" 	"Да"
-	}
-	"No"
-	{
-		"en" 	"No"
-		"pt" 	"Não"
-		"ru" 	"Нет"
-	}
-	"Loaded"
-	{
-		"#format"		"{1:s}"
-		"en"			"{1} - Loaded."
-		"pt" 		"{1} - Carregado"
-		"ru" 		"{1} - Загружен"
-	}
-	"Scope Off"
-	{
-		"en"			"The Scope is Off."
-		"pt" 		"A mira esta desativada."
-		"ru" 		"Прицел выключен."
-	}
-	"Scope On"
-	{
-		"en"			"The Scope is On."
-		"pt"			"A mira esta ativada."
-		"ru" 			"Прицел включен."
-	}
-	"Sounds Enabled"
-	{
-		"en"		"Duel Sounds: Enabled"
-		"pt"		"Sons do duelo: Ativado"
-		"ru"		"Звуки дуэли: Включены"
-	}
-	"Sounds Disabled"
-	{
-		"en"		"Duel Sounds: Disabled"
-		"pt"		"Sons do duelo: Desativado"
-		"ru"		"Звуки дуэли: Выключены"
-	}
+    "prefix"
+    {
+        "en"    "[AbNeR Duel] "
+        "pt"    "[AbNeR Duel] "
+        "ru"    "[AbNeR Duel] "
+    }
 
-	"Duel Canceled"
-	{
-		"en"			"Duel Canceled."
-		"pt"			"Duelo Cancelado."
-		"ru"			"Дуэль отменена."
-	}
-	"Duel Refused Blue"
-	{
-		"#format"		"{1:s}"
-		"en"			"Player {blue}{1}{default} refused the duel."
-		"pt"			"Jogador {blue}{1}{default} recusou o duelo."
-		"ru"			"Игрок {blue}{1}{default} отказался от дуэли."
-	}
-	"Duel Refused Red"
-	{
-		"#format"		"{1:s}"
-		"en"			"Player {red}{1}{default} refused the duel."
-		"pt"			"Jogador {red}{1}{default} recusou o duelo."
-		"ru"			"Игрок {red}{1}{default} отказался от дуэли."
-	}
-	"Duel Accepted Blue"
-	{
-		"#format"		"{1:s}"
-		"en"			"Player {blue}{1}{default} accepted the noscope duel."
-		"pt"			"Jogador {blue}{1}{default} aceitou o duelo."
-		"ru"			"Игрок {red}{1}{default} принял поединок без прицела."
-	}
-	"Duel Accepted Red"
-	{
-		"#format"		"{1:s}"
-		"en"			"Player {red}{1}{default} accepted the noscope duel."
-		"pt"			"Jogador {red}{1}{default} aceitou o duelo."
-		"ru"			"Игрок {red}{1}{default} принял поединок без прицела."
-	}
-	"Always Accept"
-	{
-		"en"			"Always Accept"
-		"pt" 		"Sempre aceitar"
-		"ru" 		"Всегда принимать"
-	}
-	"Always Refuse"
-	{
-		"en"			"Always Refuse"
-		"pt"			"Sempre recusar"
-		"ru"			"Всегда отказываться"
-	}
-	"None"
-	{
-		"en"			"Decide in vote"
-		"pt" 		"Decidir na votação"
-		"ru" 		"Решение голосованием"
-	}
-	"command"
-	{
-		"en"			"Type !duel to set your duel preferences."
-		"pt" 		"Digite !duel para definir suas preferências do duelo."
-		"ru" 		"Введите !duel что бы установить ваши дуэльные предпочтения."
-	}
-	"Duel Ask"
-	{
-		"en"			"1x1 duel?"
-		"pt"			"Deseja duelar?"
-		"ru"			"Дуэль 1x1?"
-	}
-	"Fight Time"
-	{
-		"en"			"seconds remaining."
-		"pt" 		"segundos restantes."
-		"ru" 		"секунд осталось."
-	}
+    "Start Duel"
+    {
+        "en"    "Starting 1v1 duel."
+        "pt"    "Começando duelo 1v1."
+        "ru"    "Начинаем 1х1 поединок."
+    }
+
+    "Marked"
+    {
+        "en"    "(X)"
+        "pt"    "(X)"
+        "ru"    "(X)"
+    }
+
+    "Yes"
+    {
+        "en"    "Yes"
+        "pt"    "Sim"
+        "ru"    "Да"
+    }
+
+    "No"
+    {
+        "en"    "No"
+        "pt"    "Não"
+        "ru"    "Нет"
+    }
+
+    "Loaded"
+    {
+        "#format"    "{1:s}"
+        "en"         "{1} - Loaded."
+        "pt"         "{1} - Carregado"
+        "ru"         "{1} - Загружен"
+    }
+
+    "Scope Off"
+    {
+        "en"    "The Scope is Off."
+        "pt"    "A mira esta desativada."
+        "ru"    "Прицел выключен."
+    }
+
+    "Scope On"
+    {
+        "en"    "The Scope is On."
+        "pt"    "A mira esta ativada."
+        "ru"    "Прицел включен."
+    }
+
+    "Sounds Enabled"
+    {
+        "en"    "Duel Sounds: Enabled"
+        "pt"    "Sons do duelo: Ativado"
+        "ru"    "Звуки дуэли: Включены"
+    }
+
+    "Sounds Disabled"
+    {
+        "en"    "Duel Sounds: Disabled"
+        "pt"    "Sons do duelo: Desativado"
+        "ru"    "Звуки дуэли: Выключены"
+    }
+
+    "Duel Canceled"
+    {
+        "en"    "Duel Canceled."
+        "pt"    "Duelo Cancelado."
+        "ru"    "Дуэль отменена."
+    }
+
+    "Duel Refused Blue"
+    {
+        "#format"    "{1:s}"
+        "en"         "Player {blue}{1}{default} refused the duel."
+        "pt"         "Jogador {blue}{1}{default} recusou o duelo."
+        "ru"         "Игрок {blue}{1}{default} отказался от дуэли."
+    }
+
+    "Duel Refused Red"
+    {
+        "#format"    "{1:s}"
+        "en"         "Player {red}{1}{default} refused the duel."
+        "pt"         "Jogador {red}{1}{default} recusou o duelo."
+        "ru"         "Игрок {red}{1}{default} отказался от дуэли."
+    }
+
+    "Duel Accepted Blue"
+    {
+        "#format"    "{1:s}"
+        "en"         "Player {blue}{1}{default} accepted the noscope duel."
+        "pt"         "Jogador {blue}{1}{default} aceitou o duelo."
+        "ru"         "Игрок {red}{1}{default} принял поединок без прицела."
+    }
+
+    "Duel Accepted Red"
+    {
+        "#format"    "{1:s}"
+        "en"         "Player {red}{1}{default} accepted the noscope duel."
+        "pt"         "Jogador {red}{1}{default} aceitou o duelo."
+        "ru"         "Игрок {red}{1}{default} принял поединок без прицела."
+    }
+
+    "Always Accept"
+    {
+        "en"    "Always Accept"
+        "pt"    "Sempre aceitar"
+        "ru"    "Всегда принимать"
+    }
+
+    "Always Refuse"
+    {
+        "en"    "Always Refuse"
+        "pt"    "Sempre recusar"
+        "ru"    "Всегда отказываться"
+    }
+
+    "None"
+    {
+        "en"    "Decide in vote"
+        "pt"    "Decidir na votação"
+        "ru"    "Решение голосованием"
+    }
+
+    "command"
+    {
+        "en"    "Type !duel to set your duel preferences."
+        "pt"    "Digite !duel para definir suas preferências do duelo."
+        "ru"    "Введите !duel что бы установить ваши дуэльные предпочтения."
+    }
+
+    "Duel Ask"
+    {
+        "en"    "1x1 duel?"
+        "pt"    "Deseja duelar?"
+        "ru"    "Дуэль 1x1?"
+    }
+
+    "Fight Time"
+    {
+        "en"    "seconds remaining."
+        "pt"    "segundos restantes."
+        "ru"    "секунд осталось."
+    }
 }

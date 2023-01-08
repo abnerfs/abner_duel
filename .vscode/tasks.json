@@ -6,7 +6,7 @@
         {
             "label": "BUILD DEV",
             "type": "shell",
-            "command": "D:\\SourcePawn\\SourcePawnVersion.exe  \"${file}\"",
+            "command": "c:\\SourcePawnVersion\\SourcePawnVersion.exe  \"${file}\"",
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -15,7 +15,7 @@
         {
             "label": "BUILD ZIP",
             "type": "shell",
-            "command": "D:\\SourcePawn\\SourcePawnVersion.exe  \"${file}\" 2",
+            "command": "c:\\SourcePawnVersion\\SourcePawnVersion.exe  \"${file}\" 2",
             "problemMatcher": []
         }
     ]

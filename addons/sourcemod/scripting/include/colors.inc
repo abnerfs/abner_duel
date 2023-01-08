@@ -13,7 +13,7 @@
 #define _colors_included
  
 #define MAX_MESSAGE_LENGTH 250
-#define MAX_COLORS 11 
+#define MAX_COLORS 12
 
 #define SERVER_INDEX 0
 #define NO_INDEX -1
@@ -36,18 +36,18 @@ enum Colors
 }
 
 /* Colors' properties */
-char CTag[][] = {"{default}", "{red}", "{green}", "{lightgreen}", "{blue}", "{olive}", "{lime}", "{lightred}", "{purple}", "{grey}", "{orange}"};
-char CTagCode[][] = {"\x01", "\x02", "\x04", "\x03", "\x0B", "\x05", "\x06", "\x07", "\x0E", "\x08", "\x09"};
-bool CTagReqSayText2[] = {false, false, false, true, true, true, false, false, false, false, false, false};
-bool CEventIsHooked = false;
-bool CSkipList[MAXPLAYERS+1] = {false,...};
+new String:CTag[][] = {"{default}", "{darkred}", "{green}", "{lightgreen}", "{red}", "{blue}", "{olive}", "{lime}", "{lightred}", "{purple}", "{grey}", "{orange}"};
+new String:CTagCode[][] = {"\x01", "\x02", "\x04", "\x03", "\x03", "\x03", "\x05", "\x06", "\x07", "\x03", "\x08", "\x09"};
+new bool:CTagReqSayText2[] = {false, false, false, true, true, true, false, false, false, false, false, false};
+new bool:CEventIsHooked = false;
+new bool:CSkipList[MAXPLAYERS+1] = {false,...};
 
 /* Game default profile */
-bool CProfile_Colors[] = {true, false, true, false, false, false, false, false, false, false, false, false};
-int CProfile_TeamIndex[] = {NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX};
-bool CProfile_SayText2 = false;
+new bool:CProfile_Colors[] = {true, false, true, false, false, false, false, false, false, false, false, false};
+new CProfile_TeamIndex[] = {NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX};
+new bool:CProfile_SayText2 = false;
 
-static Handle sm_show_activity = INVALID_HANDLE;
+static Handle:sm_show_activity = INVALID_HANDLE;
 
 /**
  * Prints a message to a specific client in the chat area.
@@ -59,7 +59,7 @@ static Handle sm_show_activity = INVALID_HANDLE;
  * 
  * On error/Errors:   If the client is not connected an error will be thrown.
  */
-stock CPrintToChat(int client, const char[] szMessage, any ...)
+stock CPrintToChat(client, const String:szMessage[], any:...)
 {
 	if (client <= 0 || client > MaxClients)
 		ThrowError("Invalid client index %d", client);
@@ -840,7 +840,6 @@ stock CShowActivity2(client, const String:tag[], const String:format[], any:...)
 	decl String:szBuffer[MAX_MESSAGE_LENGTH];
 	//decl String:szCMessage[MAX_MESSAGE_LENGTH];
 	new value = GetConVarInt(sm_show_activity);
-	new ReplySource:replyto = GetCmdReplySource();
 	
 	new String:name[MAX_NAME_LENGTH] = "Console";
 	new String:sign[MAX_NAME_LENGTH] = "ADMIN";
